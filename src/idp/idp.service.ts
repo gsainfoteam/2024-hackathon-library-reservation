@@ -28,10 +28,7 @@ export class IdpService {
    * @param redirectUri this is the redirect uri that is used to get the code
    * @returns accessToken, refreshToken
    */
-  async getAccessTokenFromIdP(
-    code: string,
-    redirectUri: string,
-  ): Promise<IdpJwtResponse> {
+  async getAccessTokenFromIdP(code: string): Promise<IdpJwtResponse> {
     this.logger.log('getAccessTokenFromIdP called');
     const url = this.idpUrl + '/token';
     const accessTokenResponse = await firstValueFrom(
@@ -41,7 +38,6 @@ export class IdpService {
           {
             code,
             grant_type: 'authorization_code',
-            redirect_uri: redirectUri,
           },
           {
             headers: {
