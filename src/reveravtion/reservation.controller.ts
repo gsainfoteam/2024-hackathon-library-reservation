@@ -6,6 +6,7 @@ import { ReservingDto, RoomDto } from './dto/reservatingRoomInfo.dto';
 import { Cookies } from './decorator/cookie.decorator';
 import { UserInfoRes } from 'src/user/dto/res/userInfoRes.dto';
 import { FilterDto } from './dto/filter.dto';
+import { LoginDto } from './dto/login.dto';
 
 @Controller('library')
 export class ReservationController {
@@ -13,6 +14,12 @@ export class ReservationController {
     private readonly reservationService: ReservationService,
     @InjectPage() private readonly page: Page,
   ) {}
+
+  //도서관 로그인 + AccessToken 받음
+  @Post('get-token')
+  async getToken(@Body() loginDto: LoginDto) {
+    return this.reservationService.getToken(loginDto);
+  }
 
   // 지스트 도서관에서 특정 날짜, 호실 종류를 검색
   @Post('reserve')
