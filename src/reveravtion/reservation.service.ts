@@ -198,13 +198,11 @@ export class ReservationService {
       }),
     );
 
-    return {
-      result: response.data.result.map((history) => ({
-        roomId: history.ROOM_ID,
-        reservedDate: history.RES_YYYYMMDD,
-        reservedTime: history.RES_HOUR,
-      })),
-    };
+    return response.data.result.map((history) => ({
+      roomId: history.ROOM_ID,
+      reservedDate: history.RES_YYYYMMDD,
+      reservedTime: history.RES_HOUR,
+    }));
   }
 
   async modifyReservation(

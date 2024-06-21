@@ -15,6 +15,7 @@ import { GetIdPUser } from 'src/user/decorator/get-idp-user.decorator';
 import { ApiOAuth2, ApiOkResponse } from '@nestjs/swagger';
 import { IdPGuard } from 'src/user/guard/idp.guard';
 import { ReservationInfoDto } from './dto/reservation-info.dto';
+import { ReservationHistoryDto } from './dto/reservation-history.dto';
 
 @Controller('library')
 @UseGuards(IdPGuard)
@@ -84,6 +85,7 @@ export class ReservationController {
 
   // 예약 내역 검색 후 예약 내역 DTO 반환
   @Get('history')
+  @ApiOkResponse({ type: [ReservationHistoryDto] })
   async getReserveHistory(@GetIdPUser() user: UserInfoRes) {
     return this.reservationService.getReserveHistory(user.studentNumber);
   }
