@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ReservationService } from './reservation.service';
 import {
   DeleteReserveDto,
@@ -23,10 +23,9 @@ export class ReservationController {
   }
 
   // 지스트 도서관에서 특정 날짜, 호실 종류를 검색
-  @Post('reserve')
   async searchRoomsByFilter(
     url: string,
-    @Body() filter: FilterDto,
+    filter: FilterDto,
     roomID: number,
     @Cookies('user') user: UserInfoRes,
     k: number,
@@ -41,15 +40,17 @@ export class ReservationController {
   }
 
   // 호실 DTO 배열을 생성
+  @Get('search')
   async generateRoomDtoArray(
-    url: string,
-    filter: FilterDto,
+    @Body('url') url: string,
+    @Body('filterDto') filter: FilterDto,
     @Cookies('user') user: UserInfoRes,
   ) {
     return this.reservationService.generateRoomDtoArray(url, filter, user);
   }
 
   // 호실 예약 : 예약 성공 시 true 반환
+  @Post('reserve')
   async reserveRoom(
     searchUrl: string,
     reserveUrl: string,
@@ -70,6 +71,7 @@ export class ReservationController {
   }
 
   // 예약 내역 검색 후 예약 내역 DTO 반환
+  @Get('history')
   async getReserveHistory(
     url: string,
     @Cookies('user') user: UserInfoRes,
@@ -78,6 +80,7 @@ export class ReservationController {
   }
 
   // 예약 변경
+  @Post('modify')
   async modifyReservation(
     searchUrl: string,
     reserveUrl: string,
@@ -93,6 +96,7 @@ export class ReservationController {
   }
 
   // 예약 취소
+  @Post('cancel')
   async cancelReservation(
     url: string,
     @Cookies('user') user: UserInfoRes,

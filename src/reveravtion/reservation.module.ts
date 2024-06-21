@@ -8,5 +8,6 @@ import { HttpModule } from '@nestjs/axios';
   imports: [HttpModule],
   controllers: [ReservationController],
   providers: [ReservationService],
+  exports: [ReservationModule],
 })
 export class ReservationModule {}
