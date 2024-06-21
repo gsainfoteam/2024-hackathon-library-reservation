@@ -79,12 +79,14 @@ export class ReservationController {
 
   // 예약 변경
   async modifyReservation(
-    url: string,
+    searchUrl: string,
+    reserveUrl: string,
     @Cookies('user') user: UserInfoRes,
     @Body() modifiedReserveDto: ModifiedReserveDto[],
   ) {
     return this.reservationService.modifyReservation(
-      url,
+      searchUrl,
+      reserveUrl,
       user,
       modifiedReserveDto,
     );

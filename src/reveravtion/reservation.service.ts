@@ -73,7 +73,7 @@ export class ReservationService {
       .then((response) => {
         const roomOther = response.data.roomOther;
         roomDto.roomID = roomID;
-        roomDto.roomType = filter.roomType;
+        // roomDto.roomType = filter.roomType;
         roomDto.occupied = false;
         for (let i = 0; i < roomOther.length; i++) {
           if (filter.time.find(roomOther[i].RES_HOUR) === undefined) {
@@ -191,13 +191,14 @@ export class ReservationService {
   }
 
   async modifyReservation(
-    url: string,
+    searchUrl: string,
+    reserveUrl: string,
     @Cookies('user') user: UserInfoRes,
     @Body() modifiedReserveDto: ModifiedReserveDto[],
   ) {
     for (let i = 0; i < modifiedReserveDto.length; i++) {
       if (modifiedReserveDto[i].action === 'cancel') {
-        this.cancelReservation(url, user, {
+        this.cancelReservation(reserveUrl, user, {
           ADMIN_YN: 'N',
           CREATE_ID: +user.studentNumber,
           REMARK: '전기전자컴퓨터공학부',
@@ -206,6 +207,22 @@ export class ReservationService {
           ROOM_ID: modifiedReserveDto[i].ROOM_ID,
         });
       } else if (modifiedReserveDto[i].action === 'reserve') {
+        this.reserveRoom(
+          searchUrl,
+          reserveUrl,
+          {
+            date: [modifiedReserveDto[i].reservedDate],
+            time: [modifiedReserveDto[i].reservedTime],
+            floor: modifiedReserveDto[i].ROOM_ID / 100,
+          },
+          {
+            roomID: modifiedReserveDto[i].ROOM_ID,
+            reserveDate: [modifiedReserveDto[i].reservedDate],
+            reserveTime: [modifiedReserveDto[i].reservedTime],
+          },
+          user,
+          i,
+        );
       }
     }
   }
