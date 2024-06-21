@@ -10,9 +10,32 @@ import {
 import { Body } from '@nestjs/common';
 import { Page } from 'puppeteer';
 import axios from 'axios';
+import { HttpService } from '@nestjs/axios';
+import { AxiosResponse } from 'axios';
+import { firstValueFrom } from 'rxjs';
+import { LoginDto } from './dto/login.dto';
 
 export class ReservationService {
-  constructor(@InjectPage() private readonly page: Page) {}
+  constructor(
+    @InjectPage private readonly page: Page,
+    private readonly httpService: HttpService,
+  ) {}
+
+  async getToken(loginDto: LoginDto): Promise<AxiosResponse> {
+    const url = 'https://library.gist.ac.kr/oauth/token';
+    const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+    const body = new URLSearchParams({
+      client_id: loginDto.client_id,
+      grant_type: loginDto.grant_type,
+      username: loginDto.username,
+      password: loginDto.password,
+    }).toString();
+
+    const response = await firstValueFrom(
+      this.httpService.post(url, body, { headers }),
+    );
+    return response.data;
+  }
 
   async searchRoomsByFilter(
     url: string,
