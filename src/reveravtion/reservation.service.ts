@@ -14,10 +14,20 @@ import { HttpService } from '@nestjs/axios';
 import { AxiosResponse } from 'axios';
 import { firstValueFrom } from 'rxjs';
 import { LoginDto } from './dto/login.dto';
+import { ReservationInfo } from './types/reservation-info.type';
 
 @Injectable()
 export class ReservationService {
   constructor(private readonly httpService: HttpService) {}
+
+  async getInfoByStudentId(studentID: string) {
+    const response = await firstValueFrom(
+      this.httpService.get<ReservationInfo>(
+        `/api/v1/mylibrary/facilityreservation/info/${studentID}`,
+      ),
+    );
+    return response.data.info[0];
+  }
 
   async getToken(loginDto: LoginDto): Promise<AxiosResponse> {
     const url = 'https://library.gist.ac.kr/oauth/token';

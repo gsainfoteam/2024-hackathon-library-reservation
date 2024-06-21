@@ -11,10 +11,16 @@ import { Cookies } from './decorator/cookie.decorator';
 import { UserInfoRes } from 'src/user/dto/res/userInfoRes.dto';
 import { FilterDto } from './dto/filter.dto';
 import { LoginDto } from './dto/login.dto';
+import { GetIdPUser } from 'src/user/decorator/get-idp-user.decorator';
 
 @Controller('library')
 export class ReservationController {
   constructor(private readonly reservationService: ReservationService) {}
+
+  @Get('me')
+  async getInfo(@GetIdPUser() user: UserInfoRes) {
+    return this.reservationService.getInfoByStudentId(user.studentNumber);
+  }
 
   //도서관 로그인 + AccessToken 받음
   @Post('get-token')

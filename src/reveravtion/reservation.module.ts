@@ -5,7 +5,7 @@ import { HttpModule } from '@nestjs/axios';
 // import { PrismaModule } from 'src/prisma/prisma.module';
 
 @Module({
-  imports: [HttpModule],
+  imports: [HttpModule.register({ baseURL: 'https://library.gist.ac.kr' })],
   controllers: [ReservationController],
   providers: [ReservationService],
   exports: [ReservationModule],
