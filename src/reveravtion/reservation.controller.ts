@@ -2,6 +2,7 @@ import { Body, Controller, Post } from '@nestjs/common';
 import { ReservationService } from './reservation.service';
 import {
   DeleteReserveDto,
+  ModifiedReserveDto,
   ReservedInfo,
   ReservingDto,
   RoomDto,
@@ -77,12 +78,28 @@ export class ReservationController {
   }
 
   // 예약 변경
-  async modifyReservation() {}
+  async modifyReservation(
+    url: string,
+    @Cookies('user') user: UserInfoRes,
+    @Body() modifiedReserveDto: ModifiedReserveDto[],
+  ) {
+    return this.reservationService.modifyReservation(
+      url,
+      user,
+      modifiedReserveDto,
+    );
+  }
 
   // 예약 취소
   async cancelReservation(
     url: string,
     @Cookies('user') user: UserInfoRes,
     @Body() deleteReserveDto: DeleteReserveDto,
-  ) {}
+  ) {
+    return this.reservationService.cancelReservation(
+      url,
+      user,
+      deleteReserveDto,
+    );
+  }
 }

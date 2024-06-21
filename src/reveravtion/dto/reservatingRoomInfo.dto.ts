@@ -29,13 +29,7 @@ export class ReservingDto {
 
 export class ReservedInfo {
   @IsString()
-  roomType: string;
-
-  @IsBoolean()
-  repeated: boolean;
-
-  @IsString()
-  roomID: string;
+  ROOM_ID: string;
 
   @IsString()
   reservedDate: string;
@@ -44,4 +38,36 @@ export class ReservedInfo {
   reservedTime: string;
 }
 
-export class DeleteReserveDto {}
+export class ModifiedReserveDto {
+  @IsNumber()
+  ROOM_ID: number;
+
+  @IsString()
+  reservedDate: string;
+
+  @IsNumber()
+  reservedTime: number;
+
+  @IsString()
+  action: string;
+}
+
+export class DeleteReserveDto {
+  @IsString()
+  ADMIN_YN: string;
+
+  @IsNumber()
+  CREATE_ID: number;
+
+  @IsString()
+  REMARK: string;
+
+  @IsNumber()
+  RES_HOUR: number;
+
+  @IsString()
+  RES_YYYYMMDD: string;
+
+  @IsNumber()
+  ROOM_ID: number;
+}
