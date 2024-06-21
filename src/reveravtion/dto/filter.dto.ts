@@ -2,7 +2,7 @@ import { IsInt, IsNumber, IsString } from 'class-validator';
 
 export class FilterDto {
   @IsString()
-  date: string;
+  date: string[];
 
   @IsNumber()
   time: number[];

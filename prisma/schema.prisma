@@ -18,8 +18,10 @@ model User {
   libraryID Int? @unique
   libraryPW String?
   name      String
+  department String?
   createdAt DateTime @default(now()) @map("created_at")
   consent Boolean
 
   @@map("user")
 }
+

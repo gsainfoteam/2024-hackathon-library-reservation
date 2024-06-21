@@ -20,16 +20,16 @@ export class ReservingDto {
   @IsString()
   roomType: string;
 
+  @IsString()
+  reserveDate: string[];
+
   @IsNumber()
-  ReserveAt: number[];
+  reserveTime: number[];
 }
 
 export class ReservedInfo {
   @IsString()
   roomType: string;
-
-  @IsString()
-  reservedDate: string;
 
   @IsBoolean()
   repeated: boolean;
@@ -38,5 +38,10 @@ export class ReservedInfo {
   roomID: string;
 
   @IsString()
-  reservedTime: string[];
+  reservedDate: string;
+
+  @IsString()
+  reservedTime: string;
 }
+
+export class DeleteReserveDto {}
