@@ -8,13 +8,14 @@ import {
   ReservingDto,
   RoomDto,
 } from './dto/reservatingRoomInfo.dto';
-import { Body } from '@nestjs/common';
+import { Body, Injectable } from '@nestjs/common';
 import axios from 'axios';
 import { HttpService } from '@nestjs/axios';
 import { AxiosResponse } from 'axios';
 import { firstValueFrom } from 'rxjs';
 import { LoginDto } from './dto/login.dto';
 
+@Injectable()
 export class ReservationService {
   constructor(private readonly httpService: HttpService) {}
 
