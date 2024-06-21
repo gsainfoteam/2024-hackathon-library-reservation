@@ -4,21 +4,11 @@ import { IsNotEmpty, IsString } from 'class-validator';
 export class LoginDto {
   @IsNotEmpty()
   @IsString()
-  @ApiProperty()
-  client_id: string;
-
-  @IsNotEmpty()
-  @IsString()
-  @ApiProperty()
-  grant_type: string;
-
-  @IsNotEmpty()
-  @IsString()
-  @ApiProperty()
+  @ApiProperty({ example: '20235140' })
   username: string;
 
   @IsNotEmpty()
   @IsString()
-  @ApiProperty()
+  @ApiProperty({ example: 'password' })
   password: string;
 }

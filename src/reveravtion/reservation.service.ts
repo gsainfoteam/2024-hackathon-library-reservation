@@ -8,8 +8,8 @@ import {
   ReservingDto,
   RoomDto,
 } from './dto/reservatingRoomInfo.dto';
-import { Body, Injectable } from '@nestjs/common';
-import axios from 'axios';
+import { Body, Injectable, UnauthorizedException } from '@nestjs/common';
+import axios, { AxiosError } from 'axios';
 import { HttpService } from '@nestjs/axios';
 import { AxiosResponse } from 'axios';
 import { firstValueFrom } from 'rxjs';
@@ -21,17 +21,26 @@ export class ReservationService {
 
   async getToken(loginDto: LoginDto): Promise<AxiosResponse> {
     const url = 'https://library.gist.ac.kr/oauth/token';
-    const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
-    const body = new URLSearchParams({
-      client_id: loginDto.client_id,
-      grant_type: loginDto.grant_type,
-      username: loginDto.username,
-      password: loginDto.password,
-    }).toString();
 
     const response = await firstValueFrom(
-      this.httpService.post(url, body, { headers }),
-    );
+      this.httpService.post(
+        url,
+        {
+          client_id: 'web',
+          grant_type: 'password',
+          username: loginDto.username,
+          password: loginDto.password,
+        },
+        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } },
+      ),
+    ).catch((error) => {
+      if (error instanceof AxiosError) {
+        if (error.response?.status === 400) {
+          throw new UnauthorizedException();
+        }
+      }
+      throw error;
+    });
     return response.data;
   }
 
