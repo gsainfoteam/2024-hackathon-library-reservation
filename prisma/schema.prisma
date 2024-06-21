@@ -14,12 +14,11 @@ datasource db {
 }
 
 model User {
-  uuid      String   @id @db.Uuid
-  libraryID Int? @unique
-  libraryPW String?
-  name      String
-  createdAt DateTime @default(now()) @map("created_at")
-  consent Boolean
+  uuid        String   @id @db.Uuid
+  accessToken String?
+  name        String
+  createdAt   DateTime @default(now()) @map("created_at")
+  consent     Boolean
 
   @@map("user")
 }
