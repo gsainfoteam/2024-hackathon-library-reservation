@@ -23,13 +23,3 @@ model User {
 
   @@map("user")
 }
-
-model Room {
-  uuid String @id @db.Uuid
-  roomCode String @unique
-  roomType String 
-  ReservedAtandBy String // 16h:2023xxxx
-  floor String
-
-  @@map("room")
-}

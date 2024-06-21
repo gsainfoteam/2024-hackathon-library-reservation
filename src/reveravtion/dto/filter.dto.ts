@@ -1,11 +1,15 @@
-import { IsEnum, IsString } from 'class-validator';
-import { RoomType, roomEnum } from '../types/roomType.type';
+import { IsInt, IsNumber, IsString } from 'class-validator';
 
-export class Filter {
+export class FilterDto {
   @IsString()
-  time: string;
+  date: string;
+
+  @IsNumber()
+  time: number[];
 
   @IsString()
-  @IsEnum(roomEnum)
-  roomType: RoomType;
+  roomType: string;
+
+  @IsInt()
+  floor: number;
 }
