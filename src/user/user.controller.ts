@@ -18,6 +18,7 @@ import { UserService } from './user.service';
 import {
   ApiCreatedResponse,
   ApiInternalServerErrorResponse,
+  ApiOAuth2,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
@@ -123,6 +124,7 @@ export class UserController {
     return this.userService.setConsent(user);
   }
 
+  @ApiOAuth2(['email', 'profile', 'openid', 'student_id'], 'oauth2')
   @ApiOperation({
     summary: 'get user info',
     description: 'get user info',

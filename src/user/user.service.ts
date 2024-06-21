@@ -33,8 +33,12 @@ export class UserService {
         : type === 'local'
           ? this.configService.getOrThrow<string>('LOCAL_REDIRECT_URI')
           : this.configService.getOrThrow<string>('WEB_REDIRECT_URI');
-    const tokens = await this.idpService.getAccessTokenFromIdP(code);
+    const tokens = await this.idpService.getAccessTokenFromIdP(
+      code,
+      redirectUri,
+    );
     const userInfo = await this.idpService.getUserInfo(tokens.access_token);
+    if (!userInfo.studentNumber) throw new BadRequestException();
     const user = await this.userRepository.findUserOrCreate({
       uuid: userInfo.uuid,
       name: userInfo.name,
