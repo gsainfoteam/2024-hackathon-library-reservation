@@ -16,7 +16,7 @@ datasource db {
 model User {
   uuid      String   @id @db.Uuid
   libraryID Int? @unique
-  libraryPW Int?
+  libraryPW String?
   name      String
   createdAt DateTime @default(now()) @map("created_at")
   consent Boolean
