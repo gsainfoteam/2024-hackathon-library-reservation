@@ -16,6 +16,8 @@ import { firstValueFrom } from 'rxjs';
 import { LoginDto } from './dto/login.dto';
 import { ReservationInfo } from './types/reservation-info.type';
 import { ReservationInfoDto } from './dto/reservation-info.dto';
+import dayjs from 'dayjs';
+import { ReservationHistory } from './types/reservation-history.type';
 
 @Injectable()
 export class ReservationService {
@@ -185,38 +187,24 @@ export class ReservationService {
     return true;
   }
 
-  async getReserveHistory(
-    url: string,
-    @Cookies('user') user: UserInfoRes,
-  ): Promise<ReservedInfo[]> {
-    const reservedInfo: ReservedInfo[] = [];
+  async getReserveHistory(studentID: string) {
+    const START_DT = dayjs().format('YYYYMMDD');
+    const END_DT = dayjs().add(1, 'y').format('YYYYMMDD');
+    const response = await firstValueFrom(
+      this.httpService.get<{
+        result: ReservationHistory[];
+      }>(`api/v1/mylibrary/facilityreservation/search/${studentID}`, {
+        params: { START_DT, END_DT },
+      }),
+    );
 
-    const END_DT = '20241231';
-    const ROOM_ID = 108;
-    const date = new Date();
-    const dateString = date.toISOString();
-    const START_DT =
-      dateString.slice(0, 4) + dateString.slice(5, 7) + dateString.slice(7, 9);
-
-    axios
-      .get(url + user.studentNumber, {
-        params: {
-          END_DT: END_DT,
-          ROOM_ID: ROOM_ID,
-          START_DT: START_DT,
-        },
-      })
-      .then((response) => {
-        const result = response.data.result;
-        for (let i = 0; i < result.length; i++) {
-          reservedInfo.push({
-            ROOM_ID: result.ROOM_ID,
-            reservedDate: result.RES_YYYYMMDD,
-            reservedTime: result.RES_HOUR,
-          });
-        }
-      });
-    return reservedInfo;
+    return {
+      result: response.data.result.map((history) => ({
+        roomId: history.ROOM_ID,
+        reservedDate: history.RES_YYYYMMDD,
+        reservedTime: history.RES_HOUR,
+      })),
+    };
   }
 
   async modifyReservation(

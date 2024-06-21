@@ -18,11 +18,11 @@ import { ReservationInfoDto } from './dto/reservation-info.dto';
 
 @Controller('library')
 @UseGuards(IdPGuard)
+@ApiOAuth2(['email', 'profile', 'openid', 'student_id'], 'oauth2')
 export class ReservationController {
   constructor(private readonly reservationService: ReservationService) {}
 
   @Get('me')
-  @ApiOAuth2(['email', 'profile', 'openid', 'student_id'], 'oauth2')
   @ApiOkResponse({ type: ReservationInfoDto })
   async getInfo(@GetIdPUser() user: UserInfoRes) {
     return this.reservationService.getInfoByStudentId(user.studentNumber);
@@ -84,11 +84,8 @@ export class ReservationController {
 
   // 예약 내역 검색 후 예약 내역 DTO 반환
   @Get('history')
-  async getReserveHistory(
-    url: string,
-    @Cookies('user') user: UserInfoRes,
-  ): Promise<ReservedInfo[]> {
-    return this.reservationService.getReserveHistory(url, user);
+  async getReserveHistory(@GetIdPUser() user: UserInfoRes) {
+    return this.reservationService.getReserveHistory(user.studentNumber);
   }
 
   // 예약 변경
