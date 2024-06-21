@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { ReservationService } from './reservation.service';
 import {
   DeleteReserveDto,
@@ -12,12 +12,18 @@ import { UserInfoRes } from 'src/user/dto/res/userInfoRes.dto';
 import { FilterDto } from './dto/filter.dto';
 import { LoginDto } from './dto/login.dto';
 import { GetIdPUser } from 'src/user/decorator/get-idp-user.decorator';
+import { ApiOAuth2, ApiOkResponse } from '@nestjs/swagger';
+import { IdPGuard } from 'src/user/guard/idp.guard';
+import { ReservationInfoDto } from './dto/reservation-info.dto';
 
 @Controller('library')
+@UseGuards(IdPGuard)
 export class ReservationController {
   constructor(private readonly reservationService: ReservationService) {}
 
   @Get('me')
+  @ApiOAuth2(['email', 'profile', 'openid', 'student_id'], 'oauth2')
+  @ApiOkResponse({ type: ReservationInfoDto })
   async getInfo(@GetIdPUser() user: UserInfoRes) {
     return this.reservationService.getInfoByStudentId(user.studentNumber);
   }

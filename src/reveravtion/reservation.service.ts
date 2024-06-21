@@ -15,18 +15,27 @@ import { AxiosResponse } from 'axios';
 import { firstValueFrom } from 'rxjs';
 import { LoginDto } from './dto/login.dto';
 import { ReservationInfo } from './types/reservation-info.type';
+import { ReservationInfoDto } from './dto/reservation-info.dto';
 
 @Injectable()
 export class ReservationService {
   constructor(private readonly httpService: HttpService) {}
 
-  async getInfoByStudentId(studentID: string) {
+  async getInfoByStudentId(studentID: string): Promise<ReservationInfoDto> {
     const response = await firstValueFrom(
       this.httpService.get<ReservationInfo>(
         `/api/v1/mylibrary/facilityreservation/info/${studentID}`,
       ),
     );
-    return response.data.info[0];
+    const info = response.data.info[0];
+    return {
+      userId: info.USER_ID,
+      userName: info.USER_NM,
+      koreanName: info.KOREAN_NM,
+      departmentName: info.DEPARTMENT_NM,
+      availableInDay: info.FAC_DUR4,
+      availableInMonth: info.FAC_DUR5,
+    };
   }
 
   async getToken(loginDto: LoginDto): Promise<AxiosResponse> {
