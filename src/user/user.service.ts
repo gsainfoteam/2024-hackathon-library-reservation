@@ -38,6 +38,7 @@ export class UserService {
       redirectUri,
     );
     const userInfo = await this.idpService.getUserInfo(tokens.access_token);
+    if (!userInfo.studentNumber) throw new BadRequestException();
     const user = await this.userRepository.findUserOrCreate({
       uuid: userInfo.uuid,
       name: userInfo.name,
