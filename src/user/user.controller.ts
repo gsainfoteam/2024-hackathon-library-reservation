@@ -26,11 +26,11 @@ import {
 } from '@nestjs/swagger';
 import { LogoutDto } from './dto/req/logout.dto';
 import { IdPGuard } from './guard/idp.guard';
-import { User } from '@prisma/client';
 import { GetUser } from './decorator/get-user.decorator';
 import { UserInfoRes } from './dto/res/userInfoRes.dto';
 import { GetIdPUser } from './decorator/get-idp-user.decorator';
 import { UserInfo } from 'src/idp/types/userInfo.type';
+import { User } from './dto/user.dto';
 
 @ApiTags('user')
 @Controller('user')

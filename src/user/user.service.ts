@@ -4,7 +4,7 @@ import { IdpService } from 'src/idp/idp.service';
 import { ConfigService } from '@nestjs/config';
 import { UserRepository } from './user.repository';
 import { JwtTokenType } from './types/jwtToken.type';
-import { User } from '@prisma/client';
+import { User } from './dto/user.dto';
 @Injectable()
 export class UserService {
   private readonly logger = new Logger(UserService.name);

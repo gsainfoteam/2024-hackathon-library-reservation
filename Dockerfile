@@ -1,3 +1,4 @@
+
 #Step 1: Build the app in image 'builder'
 FROM node:21-alpine3.18 AS builder
 

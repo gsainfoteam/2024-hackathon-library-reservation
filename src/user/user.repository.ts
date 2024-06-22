@@ -4,15 +4,12 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { User } from '@prisma/client';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { v4 as uuid } from 'uuid';
+import { User } from './dto/user.dto';
 
 @Injectable()
 export class UserRepository {
   private readonly logger = new Logger(UserRepository.name);
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor() {}
 
   async findUserOrCreate({
     uuid,
