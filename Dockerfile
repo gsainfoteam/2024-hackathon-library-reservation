@@ -32,4 +32,4 @@ RUN npm install -D prisma --platform=linuxmusl
 
 EXPOSE 3000
 
-CMD ["npm", "run", "start:deploy"]
+CMD ["npm", "run", "start:prod"]
