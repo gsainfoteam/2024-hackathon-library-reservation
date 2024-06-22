@@ -7,7 +7,6 @@ import {
   Req,
   Res,
   UnauthorizedException,
-  UseGuards,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
@@ -18,19 +17,12 @@ import { UserService } from './user.service';
 import {
   ApiCreatedResponse,
   ApiInternalServerErrorResponse,
-  ApiOAuth2,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { LogoutDto } from './dto/req/logout.dto';
-import { IdPGuard } from './guard/idp.guard';
-import { GetUser } from './decorator/get-user.decorator';
-import { UserInfoRes } from './dto/res/userInfoRes.dto';
-import { GetIdPUser } from './decorator/get-idp-user.decorator';
-import { UserInfo } from 'src/idp/types/userInfo.type';
-import { User } from './dto/user.dto';
 
 @ApiTags('user')
 @Controller('user')
@@ -109,32 +101,5 @@ export class UserController {
     if (!refreshToken) throw new UnauthorizedException();
     res.clearCookie('refresh_token');
     return this.userService.logout(access_token, refreshToken);
-  }
-
-  @ApiOperation({
-    summary: 'post consent',
-    description: 'post consent to the user',
-  })
-  @ApiCreatedResponse({ description: 'update consent true' })
-  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
-  @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
-  @Post('consent')
-  @UseGuards(IdPGuard)
-  async setConsent(@GetUser() user: User): Promise<void> {
-    return this.userService.setConsent(user);
-  }
-
-  @ApiOAuth2(['email', 'profile', 'openid', 'student_id'], 'oauth2')
-  @ApiOperation({
-    summary: 'get user info',
-    description: 'get user info',
-  })
-  @ApiOkResponse({ type: UserInfoRes, description: 'Return user info' })
-  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
-  @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
-  @Get('info')
-  @UseGuards(IdPGuard)
-  async getUserInfo(@GetIdPUser() user: UserInfo): Promise<UserInfoRes> {
-    return user;
   }
 }

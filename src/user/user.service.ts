@@ -4,7 +4,7 @@ import { IdpService } from 'src/idp/idp.service';
 import { ConfigService } from '@nestjs/config';
 import { UserRepository } from './user.repository';
 import { JwtTokenType } from './types/jwtToken.type';
-import { User } from './dto/user.dto';
+
 @Injectable()
 export class UserService {
   private readonly logger = new Logger(UserService.name);
@@ -39,14 +39,9 @@ export class UserService {
     );
     const userInfo = await this.idpService.getUserInfo(tokens.access_token);
     if (!userInfo.studentNumber) throw new BadRequestException();
-    const user = await this.userRepository.findUserOrCreate({
-      uuid: userInfo.uuid,
-      name: userInfo.name,
-    });
     this.logger.log('login finished');
     return {
       ...tokens,
-      consent_required: !user?.consent,
     };
   }
 
@@ -59,15 +54,9 @@ export class UserService {
   async refresh(refreshToken: string): Promise<JwtTokenType> {
     this.logger.log('refresh called');
     const tokens = await this.idpService.refreshToken(refreshToken);
-    const userData = await this.idpService.getUserInfo(tokens.access_token);
-    const user = await this.userRepository.findUserOrCreate({
-      uuid: userData.uuid,
-      name: userData.name,
-    });
     this.logger.log('refresh finished');
     return {
       ...tokens,
-      consent_required: !user?.consent,
     };
   }
 
@@ -81,25 +70,5 @@ export class UserService {
     this.logger.log('logout called');
     await this.idpService.revokeToken(accessToken);
     await this.idpService.revokeToken(refreshToken);
-  }
-
-  /**
-   * this method is used to set the user consent about ziggle service
-   * @param user
-   * @returns void
-   */
-  async setConsent(user: User): Promise<void> {
-    this.logger.log('setConsent called');
-    await this.userRepository.setConsent(user);
-  }
-
-  /**
-   * this method is used to find the user or create the user
-   * @param user
-   * @returns user
-   */
-  async findUserOrCreate(user: Pick<User, 'uuid' | 'name'>): Promise<User> {
-    this.logger.log('findUserOrCreate called');
-    return this.userRepository.findUserOrCreate(user);
   }
 }

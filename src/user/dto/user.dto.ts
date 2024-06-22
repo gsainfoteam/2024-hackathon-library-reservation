@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsString } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 
 export class User {
   @ApiProperty()
@@ -8,6 +8,7 @@ export class User {
 
   @ApiProperty()
   @IsString()
+  @IsOptional()
   accessToken: string;
 
   @ApiProperty()
@@ -16,9 +17,6 @@ export class User {
 
   @ApiProperty()
   @IsString()
+  @IsOptional()
   createdAt: string;
-
-  @ApiProperty()
-  @IsBoolean()
-  consent: boolean;
 }
