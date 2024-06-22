@@ -12,7 +12,15 @@ import { Body, Injectable, UnauthorizedException } from '@nestjs/common';
 import axios, { AxiosError } from 'axios';
 import { HttpService } from '@nestjs/axios';
 import { AxiosResponse } from 'axios';
-import { firstValueFrom, flatMap, from, map, mergeMap, toArray } from 'rxjs';
+import {
+  firstValueFrom,
+  flatMap,
+  from,
+  lastValueFrom,
+  map,
+  mergeMap,
+  toArray,
+} from 'rxjs';
 import { LoginDto } from './dto/login.dto';
 import { ReservationInfo } from './types/reservation-info.type';
 import { ReservationInfoDto } from './dto/reservation-info.dto';
@@ -21,6 +29,7 @@ import { ReservationHistory } from './types/reservation-history.type';
 import { ReservationSearchQueryDto } from './dto/reservation-search-query.dto';
 import { RoomGroup } from './types/room-group.type';
 import { ReservationSearch } from './types/reservation-search.type';
+import { GetIdPUser } from 'src/user/decorator/get-idp-user.decorator';
 
 @Injectable()
 export class ReservationService {
@@ -128,6 +137,44 @@ export class ReservationService {
     return roomDto;
   }
 
+  async checkRoomOccupied({
+    studentID,
+    roomID,
+    reserveFrom,
+    reserveTo,
+    reserveDate,
+  }: {
+    studentID: string;
+    roomID: string;
+    reserveFrom: number;
+    reserveTo: number;
+    reserveDate: string;
+  }) {
+    const times = new Set(
+      [...Array(reserveTo - reserveFrom + 1)].map((_, i) => i + reserveFrom),
+    );
+    const result = await firstValueFrom(
+      this.httpService
+        .get<ReservationSearch>(
+          `api/v1/mylibrary/facilityreservation/room/${studentID}`,
+          {
+            params: {
+              RES_YYYYMMDD: reserveDate,
+              ROOM_ID: roomID,
+            },
+          },
+        )
+        .pipe(
+          map((res) => {
+            const reservedTimes = res.data.roomOther.map((r) => r.RES_HOUR);
+            const occupied = reservedTimes.some((i) => times.has(i));
+            return occupied;
+          }),
+        ),
+    );
+    return result;
+  }
+
   async generateRoomDtoArray(
     {
       reserveDate,
@@ -167,39 +214,64 @@ export class ReservationService {
 
     return result;
   }
-  async reserveRoom(
-    searchUrl: string,
-    reserveUrl: string,
-    filter: FilterDto,
-    reservingDto: ReservingDto,
-    @Cookies('user') user: UserInfoRes,
-    k: number,
-  ): Promise<boolean> {
-    const roomDto: RoomDto = await this.searchRoomsByFilter(
-      searchUrl,
-      filter,
-      reservingDto.roomID,
-      user,
-      k,
+
+  async reserveRoom(studentNumber: string, reserveDto: ReservingDto) {
+    const info = await this.getInfoByStudentId(studentNumber);
+
+    await lastValueFrom(
+      from(reserveDto.reserveTimes).pipe(
+        mergeMap((hour) =>
+          this.httpService.post(
+            `api/v1/mylibrary/facilityreservation/room/${studentNumber}`,
+            undefined,
+            {
+              params: {
+                ADMIN_YN: 'N',
+                CREATE_ID: studentNumber,
+                REMARK: info.departmentName,
+                RES_HOUR: hour,
+                RES_YYYYMMDD: reserveDto.reserveDate,
+                ROOM_ID: reserveDto.roomID,
+              },
+            },
+          ),
+        ),
+        toArray(),
+      ),
     );
-    if (roomDto.occupied) return false;
-    else {
-      const reserveUrl: string =
-        'https://library.gist.ac.kr/api/v1/mylibrary/facilityreservation/room/';
-      for (let i = 0; i < reservingDto.reserveTime.length; i++) {
-        axios.post(reserveUrl, {
-          studentID: user.studentNumber,
-          ADMIN_YN: 'N',
-          CREATE_ID: user.studentNumber,
-          REMARK: '전기전자컴퓨터공학부',
-          RES_HOUR: reservingDto.reserveTime[i] + '01',
-          RES_YYYYMMDD: filter.date[k],
-          ROOM_ID: reservingDto.roomID,
-        });
-      }
-    }
     return true;
   }
+
+  // async reserveRoom(
+  //   reservingDto: ReservingDto,
+  //   @Cookies('user') user: UserInfoRes,
+  //   k: number,
+  // ): Promise<boolean> {
+  //   // const roomDto: RoomDto = await this.searchRoomsByFilter(
+  //   //   searchUrl,
+  //   //   filter,
+  //   //   reservingDto.roomID,
+  //   //   user,
+  //   //   k,
+  //   // );
+  //   // if (roomDto.occupied) return false;
+  //   // else {
+  //   //   const reserveUrl: string =
+  //   //     'https://library.gist.ac.kr/api/v1/mylibrary/facilityreservation/room/';
+  //   //   for (let i = 0; i < reservingDto.reserveTime.length; i++) {
+  //   //     axios.post(reserveUrl, {
+  //   //       studentID: user.studentNumber,
+  //   //       ADMIN_YN: 'N',
+  //   //       CREATE_ID: user.studentNumber,
+  //   //       REMARK: '전기전자컴퓨터공학부',
+  //   //       RES_HOUR: reservingDto.reserveTime[i] + '01',
+  //   //       RES_YYYYMMDD: filter.date[k],
+  //   //       ROOM_ID: reservingDto.roomID,
+  //   //     });
+  //   //   }
+  //   // }
+  //   // return true;
+  // }
 
   async getReserveHistory(studentID: string) {
     const START_DT = dayjs().format('YYYYMMDD');
@@ -235,23 +307,23 @@ export class ReservationService {
           RES_YYYYMMDD: modifiedReserveDto[i].reservedDate,
           ROOM_ID: modifiedReserveDto[i].ROOM_ID,
         });
-      } else if (modifiedReserveDto[i].action === 'reserve') {
-        this.reserveRoom(
-          searchUrl,
-          reserveUrl,
-          {
-            date: [modifiedReserveDto[i].reservedDate],
-            time: [modifiedReserveDto[i].reservedTime],
-            floor: modifiedReserveDto[i].ROOM_ID / 100,
-          },
-          {
-            roomID: modifiedReserveDto[i].ROOM_ID,
-            reserveDate: [modifiedReserveDto[i].reservedDate],
-            reserveTime: [modifiedReserveDto[i].reservedTime],
-          },
-          user,
-          i,
-        );
+        // } else if (modifiedReserveDto[i].action === 'reserve') {
+        //   this.reserveRoom(
+        //     searchUrl,
+        //     reserveUrl,
+        //     {
+        //       date: [modifiedReserveDto[i].reservedDate],
+        //       time: [modifiedReserveDto[i].reservedTime],
+        //       floor: modifiedReserveDto[i].ROOM_ID / 100,
+        //     },
+        //     {
+        //       roomID: modifiedReserveDto[i].ROOM_ID,
+        //       reserveDate: [modifiedReserveDto[i].reservedDate],
+        //       reserveTime: [modifiedReserveDto[i].reservedTime],
+        //     },
+        //     user,
+        //     i,
+        //   );
       }
     }
   }

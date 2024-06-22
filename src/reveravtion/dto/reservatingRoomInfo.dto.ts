@@ -27,11 +27,11 @@ export class ReservingDto {
 
   @ApiProperty()
   @IsString()
-  reserveDate: string[];
+  reserveDate: string;
 
-  @ApiProperty()
-  @IsNumber()
-  reserveTime: number[];
+  @ApiProperty({ type: [Number] })
+  @IsNumber({}, { each: true })
+  reserveTimes: number[];
 }
 
 export class ReservedInfo {

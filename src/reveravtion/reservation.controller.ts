@@ -68,22 +68,13 @@ export class ReservationController {
   // 호실 예약 : 예약 성공 시 true 반환
   @Post('reserve')
   async reserveRoom(
-    searchUrl: string,
-    reserveUrl: string,
-    filter: FilterDto,
-    reservingDto: ReservingDto,
-    @Cookies('user') user: UserInfoRes,
+    @Body() reservingDto: ReservingDto,
+    @GetIdPUser() user: UserInfoRes,
   ) {
-    for (let i = 0; i < reservingDto.reserveDate.length; i++) {
-      this.reservationService.reserveRoom(
-        searchUrl,
-        reserveUrl,
-        filter,
-        reservingDto,
-        user,
-        i,
-      );
-    }
+    return this.reservationService.reserveRoom(
+      user.studentNumber,
+      reservingDto,
+    );
   }
 
   // 예약 내역 검색 후 예약 내역 DTO 반환
@@ -98,7 +89,6 @@ export class ReservationController {
   async modifyReservation(
     searchUrl: string,
     reserveUrl: string,
-    @ApiProperty()
     @Cookies('user')
     user: UserInfoRes,
     @Body() modifiedReserveDto: ModifiedReserveDto[],
