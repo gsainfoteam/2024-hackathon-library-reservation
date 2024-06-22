@@ -12,16 +12,28 @@ import { Body, Injectable, UnauthorizedException } from '@nestjs/common';
 import axios, { AxiosError } from 'axios';
 import { HttpService } from '@nestjs/axios';
 import { AxiosResponse } from 'axios';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, flatMap, from, map, mergeMap, toArray } from 'rxjs';
 import { LoginDto } from './dto/login.dto';
 import { ReservationInfo } from './types/reservation-info.type';
 import { ReservationInfoDto } from './dto/reservation-info.dto';
 import dayjs from 'dayjs';
 import { ReservationHistory } from './types/reservation-history.type';
+import { ReservationSearchQueryDto } from './dto/reservation-search-query.dto';
+import { RoomGroup } from './types/room-group.type';
+import { ReservationSearch } from './types/reservation-search.type';
 
 @Injectable()
 export class ReservationService {
   constructor(private readonly httpService: HttpService) {}
+
+  async getRooms(studentID: string) {
+    const response = await firstValueFrom(
+      this.httpService.get<ReservationInfo>(
+        `/api/v1/mylibrary/facilityreservation/info/${studentID}`,
+      ),
+    );
+    return response.data.facility;
+  }
 
   async getInfoByStudentId(studentID: string): Promise<ReservationInfoDto> {
     const response = await firstValueFrom(
@@ -117,41 +129,43 @@ export class ReservationService {
   }
 
   async generateRoomDtoArray(
-    url: string,
-    filter: FilterDto,
-    @Cookies('user') user: UserInfoRes,
+    {
+      reserveDate,
+      roomGroup,
+      reserveFrom,
+      reserveTo,
+    }: ReservationSearchQueryDto,
+    studentID: string,
   ) {
-    const roomIDs: number[][] = [[], [], [], []];
+    const roomGroupId = RoomGroup[roomGroup];
+    const roomIds = (await this.getRooms(studentID))
+      .filter((room) => room.ROOM_GROUP === roomGroupId)
+      .map((room) => room.ROOM_ID);
 
-    roomIDs[1].push(108);
-    roomIDs[1].push(110);
-
-    for (let i = 202; i <= 210; i++) roomIDs[2].push(i);
-    for (let i = 219; i <= 240; i++) roomIDs[2].push(i);
-
-    roomIDs[3].push(302);
-    roomIDs[3].push(303);
-    roomIDs[3].push(305);
-    roomIDs[3].push(306);
-    roomIDs[3].push(307);
-    roomIDs[3].push(310);
-
-    for (let i = 406; i <= 409; i++) roomIDs[4].push(i);
-
-    const rooms: RoomDto[] = [];
-
-    for (let i = 0; i < roomIDs[filter.floor].length; i++) {
-      rooms.push(
-        await this.searchRoomsByFilter(
-          url,
-          filter,
-          roomIDs[filter.floor][i],
-          user,
-          0,
+    const times = new Set(
+      [...Array(reserveTo - reserveFrom + 1)].map((_, i) => i + reserveFrom),
+    );
+    const result = await firstValueFrom(
+      from(roomIds).pipe(
+        mergeMap((roomId) =>
+          this.httpService.get<ReservationSearch>(
+            `api/v1/mylibrary/facilityreservation/room/${studentID}`,
+            { params: { RES_YYYYMMDD: reserveDate[0], ROOM_ID: roomId } },
+          ),
         ),
-      );
-    }
-    return rooms;
+        map((res) => {
+          const reservedTimes = res.data.roomOther.map((r) => r.RES_HOUR);
+          const occupied = reservedTimes.some((i) => times.has(i));
+          return {
+            roomId: res.data.normalRoomGroupDates[0].ROOM_ID,
+            occupied,
+          };
+        }),
+        toArray(),
+      ),
+    );
+
+    return result;
   }
   async reserveRoom(
     searchUrl: string,

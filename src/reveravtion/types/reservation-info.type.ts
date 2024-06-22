@@ -1,3 +1,5 @@
+import { RoomGroup, RoomGroupType } from './room-group.type';
+
 export type ReservationInfo = {
   notAvailableRoomDays: unknown[];
   infoCount: number;
@@ -7,7 +9,7 @@ export type ReservationInfo = {
       FLOOR: 1 | 2 | 3 | 4;
       FAC_NM: string;
       ROOM_NO: number;
-      ROOM_GROUP: number;
+      ROOM_GROUP: (typeof RoomGroup)[RoomGroupType];
     },
   ];
   info: [

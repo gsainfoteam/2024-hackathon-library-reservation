@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { ReservationService } from './reservation.service';
 import {
   DeleteReserveDto,
@@ -16,6 +16,7 @@ import { ApiOAuth2, ApiOkResponse } from '@nestjs/swagger';
 import { IdPGuard } from 'src/user/guard/idp.guard';
 import { ReservationInfoDto } from './dto/reservation-info.dto';
 import { ReservationHistoryDto } from './dto/reservation-history.dto';
+import { ReservationSearchQueryDto } from './dto/reservation-search-query.dto';
 
 @Controller('library')
 @UseGuards(IdPGuard)
@@ -55,11 +56,13 @@ export class ReservationController {
   // 호실 DTO 배열을 생성
   @Get('search')
   async generateRoomDtoArray(
-    @Body('url') url: string,
-    @Body('filterDto') filter: FilterDto,
-    @Cookies('user') user: UserInfoRes,
+    @Query() searchQuery: ReservationSearchQueryDto,
+    @GetIdPUser() user: UserInfoRes,
   ) {
-    return this.reservationService.generateRoomDtoArray(url, filter, user);
+    return this.reservationService.generateRoomDtoArray(
+      searchQuery,
+      user.studentNumber,
+    );
   }
 
   // 호실 예약 : 예약 성공 시 true 반환
@@ -95,7 +98,9 @@ export class ReservationController {
   async modifyReservation(
     searchUrl: string,
     reserveUrl: string,
-    @Cookies('user') user: UserInfoRes,
+    @ApiProperty()
+    @Cookies('user')
+    user: UserInfoRes,
     @Body() modifiedReserveDto: ModifiedReserveDto[],
   ) {
     return this.reservationService.modifyReservation(
