@@ -1,20 +1,10 @@
-import { FilterDto } from './dto/filter.dto';
-import { Cookies } from './decorator/cookie.decorator';
-import { UserInfoRes } from 'src/user/dto/res/userInfoRes.dto';
-import {
-  DeleteReserveDto,
-  ModifiedReserveDto,
-  ReservedInfo,
-  ReservingDto,
-  RoomDto,
-} from './dto/reservatingRoomInfo.dto';
-import { Body, Injectable, UnauthorizedException } from '@nestjs/common';
-import axios, { AxiosError } from 'axios';
+import { ReservingDto } from './dto/reservatingRoomInfo.dto';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { AxiosError } from 'axios';
 import { HttpService } from '@nestjs/axios';
 import { AxiosResponse } from 'axios';
 import {
   firstValueFrom,
-  flatMap,
   from,
   lastValueFrom,
   map,
@@ -29,7 +19,6 @@ import { ReservationHistory } from './types/reservation-history.type';
 import { ReservationSearchQueryDto } from './dto/reservation-search-query.dto';
 import { RoomGroup } from './types/room-group.type';
 import { ReservationSearch } from './types/reservation-search.type';
-import { GetIdPUser } from 'src/user/decorator/get-idp-user.decorator';
 
 @Injectable()
 export class ReservationService {
@@ -84,57 +73,6 @@ export class ReservationService {
       throw error;
     });
     return response.data;
-  }
-
-  async searchRoomsByFilter(
-    url: string,
-    @Body() filter: FilterDto,
-    roomID: number,
-    @Cookies('user') user: UserInfoRes,
-    k: number,
-  ): Promise<RoomDto> {
-    // https://library.gist.ac.kr/api/v1/mylibrary/facilityreservation/room/20235215?END_DT_YYYYMMDD=20240701&RES_YYYYMMDD=20240621&ROOM_ID=202&START_DT_YYYYMMDD=20240601
-    const roomDto: RoomDto = {
-      roomID: 0,
-      roomType: 'single',
-      occupied: false,
-    };
-    const selectedYear = parseInt(filter.date[k].slice(0, 5));
-    const selectedMonth = parseInt(filter.date[k].slice(4, 6));
-    const START_DT_YYYYMM =
-      selectedYear.toString() + (selectedMonth - 1 == 0)
-        ? '01'
-        : selectedMonth - 1 < 10
-          ? '0' + ((selectedMonth - 1) % 12).toString()
-          : ((selectedMonth - 1) % 12).toString();
-    const END_DT_YYYYMM =
-      selectedYear.toString() + (selectedMonth + 1 == 12)
-        ? '12'
-        : (selectedMonth + 1) % 12 < 10
-          ? '0' + ((selectedMonth + 1) % 12).toString()
-          : ((selectedMonth + 1) % 12).toString();
-    axios
-      .get(url, {
-        params: {
-          END_DT_YYYYMMDD: END_DT_YYYYMM + '01',
-          RES_YYYYMMDD: filter.date[k],
-          START_DT_YYYYMMDD: START_DT_YYYYMM + '01',
-          ROOM_ID: roomID,
-        },
-      })
-      .then((response) => {
-        const roomOther = response.data.roomOther;
-        roomDto.roomID = roomID;
-        // roomDto.roomType = filter.roomType;
-        roomDto.occupied = false;
-        for (let i = 0; i < roomOther.length; i++) {
-          if (filter.time.find(roomOther[i].RES_HOUR) === undefined) {
-            roomDto.occupied = true;
-            break;
-          }
-        }
-      });
-    return roomDto;
   }
 
   async checkRoomOccupied({
@@ -206,6 +144,8 @@ export class ReservationService {
           return {
             roomId: res.data.normalRoomGroupDates[0].ROOM_ID,
             occupied,
+            reservedTimes,
+            myTimes: res.data.room.map((r) => r.RES_HOUR),
           };
         }),
         toArray(),
@@ -242,37 +182,6 @@ export class ReservationService {
     return true;
   }
 
-  // async reserveRoom(
-  //   reservingDto: ReservingDto,
-  //   @Cookies('user') user: UserInfoRes,
-  //   k: number,
-  // ): Promise<boolean> {
-  //   // const roomDto: RoomDto = await this.searchRoomsByFilter(
-  //   //   searchUrl,
-  //   //   filter,
-  //   //   reservingDto.roomID,
-  //   //   user,
-  //   //   k,
-  //   // );
-  //   // if (roomDto.occupied) return false;
-  //   // else {
-  //   //   const reserveUrl: string =
-  //   //     'https://library.gist.ac.kr/api/v1/mylibrary/facilityreservation/room/';
-  //   //   for (let i = 0; i < reservingDto.reserveTime.length; i++) {
-  //   //     axios.post(reserveUrl, {
-  //   //       studentID: user.studentNumber,
-  //   //       ADMIN_YN: 'N',
-  //   //       CREATE_ID: user.studentNumber,
-  //   //       REMARK: '전기전자컴퓨터공학부',
-  //   //       RES_HOUR: reservingDto.reserveTime[i] + '01',
-  //   //       RES_YYYYMMDD: filter.date[k],
-  //   //       ROOM_ID: reservingDto.roomID,
-  //   //     });
-  //   //   }
-  //   // }
-  //   // return true;
-  // }
-
   async getReserveHistory(studentID: string) {
     const START_DT = dayjs().format('YYYYMMDD');
     const END_DT = dayjs().add(1, 'y').format('YYYYMMDD');
@@ -291,55 +200,41 @@ export class ReservationService {
     }));
   }
 
-  async modifyReservation(
-    searchUrl: string,
-    reserveUrl: string,
-    @Cookies('user') user: UserInfoRes,
-    @Body() modifiedReserveDto: ModifiedReserveDto[],
-  ) {
-    for (let i = 0; i < modifiedReserveDto.length; i++) {
-      if (modifiedReserveDto[i].action === 'cancel') {
-        this.cancelReservation(reserveUrl, user, {
-          ADMIN_YN: 'N',
-          CREATE_ID: +user.studentNumber,
-          REMARK: '전기전자컴퓨터공학부',
-          RES_HOUR: modifiedReserveDto[i].reservedTime,
-          RES_YYYYMMDD: modifiedReserveDto[i].reservedDate,
-          ROOM_ID: modifiedReserveDto[i].ROOM_ID,
-        });
-        // } else if (modifiedReserveDto[i].action === 'reserve') {
-        //   this.reserveRoom(
-        //     searchUrl,
-        //     reserveUrl,
-        //     {
-        //       date: [modifiedReserveDto[i].reservedDate],
-        //       time: [modifiedReserveDto[i].reservedTime],
-        //       floor: modifiedReserveDto[i].ROOM_ID / 100,
-        //     },
-        //     {
-        //       roomID: modifiedReserveDto[i].ROOM_ID,
-        //       reserveDate: [modifiedReserveDto[i].reservedDate],
-        //       reserveTime: [modifiedReserveDto[i].reservedTime],
-        //     },
-        //     user,
-        //     i,
-        //   );
-      }
-    }
-  }
+  async cancelReservation(studentNumber: string, reserveDto: ReservingDto) {
+    const response = await firstValueFrom(
+      this.httpService.get<{
+        result: ReservationHistory[];
+      }>(`api/v1/mylibrary/facilityreservation/search/${studentNumber}`, {
+        params: {
+          START_DT: reserveDto.reserveDate,
+          END_DT: reserveDto.reserveDate,
+        },
+      }),
+    );
+    const toCancel = response.data.result.filter(
+      ({ ROOM_ID, RES_HOUR }) =>
+        ROOM_ID === reserveDto.roomID &&
+        reserveDto.reserveTimes.includes(RES_HOUR),
+    );
 
-  async cancelReservation(
-    url: string,
-    @Cookies('user') user: UserInfoRes,
-    @Body() deleteReserveDto: DeleteReserveDto,
-  ) {
-    axios.post(url + user.studentNumber, {
-      ADMIN_YN: deleteReserveDto.ADMIN_YN,
-      CREATE_ID: deleteReserveDto.CREATE_ID,
-      REMARK: deleteReserveDto.REMARK,
-      RES_HOUR: deleteReserveDto.RES_HOUR,
-      RES_YYYYMMDD: deleteReserveDto.RES_YYYYMMDD,
-      ROOM_ID: deleteReserveDto.ROOM_ID,
-    });
+    await lastValueFrom(
+      from(toCancel).pipe(
+        mergeMap((history) =>
+          this.httpService.delete(
+            `api/v1/mylibrary/facilityreservation/room/${studentNumber}`,
+            {
+              params: {
+                RES_ID: history.RES_ID,
+                RES_HOUR: history.RES_HOUR,
+                RES_YYYYMMDD: history.RES_YYYYMMDD,
+                ROOM_ID: history.ROOM_ID,
+              },
+            },
+          ),
+        ),
+        toArray(),
+      ),
+    );
+    return true;
   }
 }

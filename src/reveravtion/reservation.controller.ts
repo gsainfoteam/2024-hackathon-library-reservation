@@ -1,15 +1,15 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
-import { ReservationService } from './reservation.service';
 import {
-  DeleteReserveDto,
-  ModifiedReserveDto,
-  ReservedInfo,
-  ReservingDto,
-  RoomDto,
-} from './dto/reservatingRoomInfo.dto';
-import { Cookies } from './decorator/cookie.decorator';
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { ReservationService } from './reservation.service';
+import { ReservingDto } from './dto/reservatingRoomInfo.dto';
 import { UserInfoRes } from 'src/user/dto/res/userInfoRes.dto';
-import { FilterDto } from './dto/filter.dto';
 import { LoginDto } from './dto/login.dto';
 import { GetIdPUser } from 'src/user/decorator/get-idp-user.decorator';
 import { ApiOAuth2, ApiOkResponse } from '@nestjs/swagger';
@@ -34,23 +34,6 @@ export class ReservationController {
   @Post('get-token')
   async getToken(@Body() loginDto: LoginDto) {
     return this.reservationService.getToken(loginDto);
-  }
-
-  // 지스트 도서관에서 특정 날짜, 호실 종류를 검색
-  async searchRoomsByFilter(
-    url: string,
-    filter: FilterDto,
-    roomID: number,
-    @Cookies('user') user: UserInfoRes,
-    k: number,
-  ): Promise<RoomDto> {
-    return this.reservationService.searchRoomsByFilter(
-      url,
-      filter,
-      roomID,
-      user,
-      k,
-    );
   }
 
   // 호실 DTO 배열을 생성
@@ -84,34 +67,15 @@ export class ReservationController {
     return this.reservationService.getReserveHistory(user.studentNumber);
   }
 
-  // 예약 변경
-  @Post('modify')
-  async modifyReservation(
-    searchUrl: string,
-    reserveUrl: string,
-    @Cookies('user')
-    user: UserInfoRes,
-    @Body() modifiedReserveDto: ModifiedReserveDto[],
-  ) {
-    return this.reservationService.modifyReservation(
-      searchUrl,
-      reserveUrl,
-      user,
-      modifiedReserveDto,
-    );
-  }
-
   // 예약 취소
-  @Post('cancel')
+  @Delete('cancel')
   async cancelReservation(
-    url: string,
-    @Cookies('user') user: UserInfoRes,
-    @Body() deleteReserveDto: DeleteReserveDto,
+    @Body() reservingDto: ReservingDto,
+    @GetIdPUser() user: UserInfoRes,
   ) {
     return this.reservationService.cancelReservation(
-      url,
-      user,
-      deleteReserveDto,
+      user.studentNumber,
+      reservingDto,
     );
   }
 }
